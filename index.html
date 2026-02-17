@@ -1,0 +1,2152 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Horario Cuatri</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0f17">
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#121a28;
+      --card2:#0f1624;
+      --text:#e9eefb;
+      --muted:#9fb0d0;
+      --line:rgba(255,255,255,.08);
+      --accent:#7aa7ff;
+      --good:#35d07f;
+      --warn:#ffd24d;
+      --bad:#ff4d6d;
+      --noclass: rgba(122,167,255,.14);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(122,167,255,.18), transparent 60%),
+                  radial-gradient(900px 700px at 80% 30%, rgba(53,208,127,.10), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      overflow:hidden;
+    }
+
+    /* App shell */
+    .app{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:5;
+      padding: 14px 14px 10px;
+      background: linear-gradient(to bottom, rgba(11,15,23,.92), rgba(11,15,23,.75));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .title{
+      font-size:18px;
+      font-weight:750;
+      letter-spacing:.2px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:0;
+    }
+    .pill{
+      font-size:12px;
+      color:var(--muted);
+      padding:6px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background: rgba(255,255,255,.04);
+    }
+
+    .actions{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight:650;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    }
+    .btn:hover{ border-color: rgba(122,167,255,.35); }
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(122,167,255,.22), rgba(122,167,255,.10));
+      border-color: rgba(122,167,255,.35);
+    }
+    .btn:active{ transform: translateY(1px); }
+
+    /* Tabs */
+    .tabs{
+      display:flex;
+      gap:8px;
+      padding: 10px 0 0;
+      overflow:auto;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar{ display:none; }
+    .tab{
+      white-space:nowrap;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+    }
+    .tab.active{
+      color: var(--text);
+      border-color: rgba(122,167,255,.45);
+      background: rgba(122,167,255,.14);
+    }
+
+    /* Content area */
+    .content{
+      flex:1;
+      overflow:auto;
+      padding: 14px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.12) transparent;
+    }
+    .content::-webkit-scrollbar{ width: 10px; }
+    .content::-webkit-scrollbar-thumb{
+      background: rgba(255,255,255,.10);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+
+    .panel{ display:none; }
+    .panel.active{ display:block; }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .section-title{
+      margin: 0 0 10px;
+      font-size: 14px;
+      letter-spacing:.2px;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    /* Filters */
+    .filters{
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom: 12px;
+      padding: 8px 0 10px;
+      background: linear-gradient(to bottom, rgba(11,15,23,.95), rgba(11,15,23,.85));
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .select, .input{
+      flex:1;
+      min-width: 160px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 14px;
+      outline:none;
+      font-weight:650;
+    }
+    .select option{ background:#0b0f17; color:var(--text); }
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    /* Day list view */
+    .past-day{
+      opacity: .45;
+      filter: grayscale(.4);
+    }
+
+    .day-block{
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .day-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .day-date{
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing:.2px;
+      margin:0;
+    }
+    .day-sub{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .noclass-badge{
+      font-size: 12px;
+      font-weight: 850;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(122,167,255,.35);
+      background: rgba(122,167,255,.12);
+      color: var(--text);
+    }
+
+    .events{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .event{
+      padding: 10px 10px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.24);
+      border: 1px solid var(--line);
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .event-left{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-width: 0;
+    }
+    .event-title{
+      font-weight: 850;
+      font-size: 14px;
+      margin:0;
+      line-height: 1.2;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space:nowrap;
+      max-width: 340px;
+    }
+    .event-meta{
+      color: var(--muted);
+      font-size: 12px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+
+    .tag{
+      font-size: 11px;
+      font-weight: 900;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+    }
+    .tag.type-evaluacion{ border-color: rgba(255,77,109,.6); background: rgba(255,77,109,.22); color:#ffccd5; }
+    .tag.type-entrega{ border-color: rgba(255,210,77,.35); background: rgba(255,210,77,.12); }
+    .tag.type-clase{ border-color: rgba(53,208,127,.30); background: rgba(53,208,127,.10); }
+    .tag.type-practica{ border-color: rgba(122,167,255,.35); background: rgba(122,167,255,.12); }
+
+    /* SolidWorks (rosa especial) */
+    .event.solidworks{
+      border-color: rgba(255,105,180,.55);
+      background: linear-gradient(180deg, rgba(255,105,180,.20), rgba(0,0,0,.25));
+      box-shadow: 0 0 0 1px rgba(255,105,180,.25);
+    }
+    .tag.solidworks-tag{
+      border-color: rgba(255,105,180,.6);
+      background: rgba(255,105,180,.22);
+      color:#ffd6ec;
+    }
+
+    .event.type-evaluacion{
+      border-color: rgba(255,77,109,.55);
+      background: linear-gradient(180deg, rgba(255,77,109,.18), rgba(0,0,0,.25));
+      box-shadow: 0 0 0 1px rgba(255,77,109,.25);
+    }
+
+    .event-actions{
+      display:flex;
+      gap:8px;
+      flex-shrink:0;
+    }
+    .iconbtn{
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+    }
+    .iconbtn:hover{ border-color: rgba(255,255,255,.18); }
+    .iconbtn.danger:hover{ border-color: rgba(255,77,109,.45); }
+    .iconbtn:active{ transform: translateY(1px); }
+
+    /* Calendar month view */
+    .cal-wrap{
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .cal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 12px;
+    }
+    .cal-month{
+      font-weight: 950;
+      letter-spacing:.2px;
+      margin:0;
+      font-size: 16px;
+    }
+    .cal-grid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    .dow{
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      padding: 2px 4px;
+      opacity:.9;
+    }
+    .cell{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      padding: 10px 8px;
+      min-height: 64px;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .cell:hover{ border-color: rgba(122,167,255,.30); }
+    .cell.out{ opacity:.45; }
+    .cell.noclass{ background: var(--noclass); border-color: rgba(122,167,255,.18); }
+    .cell.today{ border-color: rgba(53,208,127,.45); }
+    .daynum{ font-weight: 900; font-size: 13px; margin:0; }
+    .dots{
+      display:flex;
+      gap:4px;
+      flex-wrap:wrap;
+      margin-top: 8px;
+    }
+    .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.20);
+    }
+    .dot.eval{ background: rgba(255,77,109,.85); }
+    .dot.ent{ background: rgba(255,210,77,.85); }
+    .dot.cls{ background: rgba(53,208,127,.75); }
+    .dot.prc{ background: rgba(122,167,255,.85); }
+
+    /* Subject progress */
+    .subject-block{
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .subject-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .subject-head-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+
+    .donut{
+      width: 56px;
+      height: 56px;
+      display:grid;
+      place-items:center;
+      border-radius: 999px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid var(--line);
+    }
+    .donut svg{ display:block; }
+    .donut .donut-center{
+      position:absolute;
+      width: 56px;
+      height: 56px;
+      display:grid;
+      place-items:center;
+      font-weight: 950;
+      font-size: 12px;
+      color: var(--text);
+      pointer-events:none;
+    }
+
+    .subject-name{
+      margin:0;
+      font-weight: 950;
+      font-size: 15px;
+      letter-spacing:.2px;
+    }
+    .subject-summary{
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .themes{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .theme{
+      border:1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(0,0,0,.22);
+      padding: 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .theme-left{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .theme-title{
+      margin:0;
+      font-weight: 850;
+      font-size: 14px;
+      white-space: pre-line; /* permitir saltos de línea */
+      line-height: 1.25;
+      max-width: 280px;
+    }
+    .theme-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+    .score{
+      width: 80px;
+      text-align:center;
+      font-weight: 900;
+    }
+    .bar{
+      width: 110px;
+      height: 10px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      overflow:hidden;
+    }
+    .bar > div{
+      height:100%;
+      background: linear-gradient(90deg, rgba(255,77,109,.9), rgba(255,210,77,.9), rgba(53,208,127,.9));
+      width: 0%;
+    }
+
+    /* Modal */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      z-index: 50;
+      padding: 14px;
+    }
+    .modal-backdrop.show{ display:flex; }
+    .modal{
+      width: 100%;
+      max-width: 520px;
+      border-radius: 22px;
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(18,26,40,.96), rgba(15,22,36,.92));
+      box-shadow: 0 30px 70px rgba(0,0,0,.55);
+      overflow:hidden;
+    }
+    .modal-head{
+      padding: 14px 14px 10px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .modal-title{
+      margin:0;
+      font-weight: 950;
+      font-size: 15px;
+    }
+    .modal-body{
+      padding: 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .label{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 6px;
+      display:block;
+    }
+    .modal-foot{
+      padding: 12px 14px 14px;
+      border-top:1px solid var(--line);
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+    }
+
+    @media (max-width: 420px){
+      .grid2{ grid-template-columns: 1fr; }
+      .event-title{ max-width: 240px; }
+      .theme-title{ max-width: 210px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar-row">
+        <h1 class="title">Horario Cuatri <span class="pill" id="pillRange">—</span></h1>
+        <div class="actions">
+          <button class="btn primary" id="btnAdd">+ Añadir</button>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="tab-calendar">Calendario</button>
+        <button class="tab" data-tab="tab-evals">Evaluaciones</button>
+        <button class="tab" data-tab="tab-deliveries">Entregas</button>
+        <button class="tab" data-tab="tab-subjects">Asignaturas</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- TAB 1: CALENDAR TOTAL -->
+      <section class="panel active" id="tab-calendar">
+        <div class="filters">
+          <select class="select" id="viewMode">
+            <option value="day">Vista Día (scroll)</option>
+            <option value="month">Vista Calendario (mes)</option>
+          </select>
+
+          <select class="select" id="filterTypeAll">
+            <option value="all">Tipo: Todos</option>
+            <option value="clase">Clase</option>
+            <option value="practica">Práctica</option>
+            <option value="parcial">Parcial</option>
+            <option value="examen">Examen</option>
+            <option value="entrega">Entrega</option>
+            <option value="presentacion">Presentación</option>
+          </select>
+
+          <select class="select" id="filterSubjectAll">
+            <option value="all">Asignatura: Todas</option>
+          </select>
+        </div>
+
+        <div class="hint">Tip: en “Vista Calendario (mes)” puedes tocar un día para ver lo que toca.</div>
+
+        <div id="calendarDayView"></div>
+        <div id="calendarMonthView" style="display:none;"></div>
+      </section>
+
+      <!-- TAB 2: EVALUATIONS -->
+      <section class="panel" id="tab-evals">
+        <div class="filters">
+          <select class="select" id="filterSubjectEval">
+            <option value="all">Asignatura: Todas</option>
+          </select>
+          <input class="input" id="searchEval" placeholder="Buscar (ej: 'parcial', 'electrónica'…)" />
+        </div>
+        <div id="evalsDayView"></div>
+      </section>
+
+      <!-- TAB 3: DELIVERIES -->
+      <section class="panel" id="tab-deliveries">
+        <div class="filters">
+          <select class="select" id="filterSubjectDel">
+            <option value="all">Asignatura: Todas</option>
+          </select>
+          <input class="input" id="searchDel" placeholder="Buscar entrega (ej: 'Relación', 'PR'…)" />
+        </div>
+        <div id="deliveriesDayView"></div>
+      </section>
+
+      <!-- TAB 4: SUBJECTS + PROGRESS -->
+      <section class="panel" id="tab-subjects">
+        <div class="filters" id="subjectButtonsBar">
+          <!-- Botones de asignaturas dinámicos -->
+        </div>
+        <div class="hint">Aquí solo trackeamos progreso por temas (0–100). Se guarda automáticamente.</div>
+        <div id="subjectsView"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- MODAL ADD EVENT -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title">Añadir / editar evento</h3>
+        <button class="iconbtn" id="btnCloseModal" title="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div>
+          <label class="label">Fecha</label>
+          <input class="input" type="date" id="mDate" />
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label class="label">Tipo</label>
+            <select class="select" id="mType">
+              <option value="clase">Clase</option>
+              <option value="practica">Práctica</option>
+              <option value="parcial">Parcial</option>
+              <option value="examen">Examen</option>
+              <option value="entrega">Entrega</option>
+              <option value="presentacion">Presentación</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">Asignatura</label>
+            <input class="input" id="mSubject" placeholder="Ej: Informática Industrial" />
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label class="label">Hora inicio</label>
+            <input class="input" type="time" id="mStart" placeholder="11:00" />
+          </div>
+          <div>
+            <label class="label">Hora fin</label>
+            <input class="input" type="time" id="mEnd" placeholder="13:00" />
+          </div>
+        </div>
+
+        <div>
+          <label class="label">Título / detalle</label>
+          <input class="input" id="mTitle" placeholder="Ej: PR Electrónica / Parcial Materiales 1" />
+        </div>
+
+        <div>
+          <label class="label">Notas (opcional)</label>
+          <input class="input" id="mNotes" placeholder="Ej: Temas 1–3, llevar calculadora..." />
+        </div>
+
+        <div class="row">
+          <label class="label" style="margin:0;">¿Día sin clase?</label>
+          <input type="checkbox" id="mNoClass" />
+        </div>
+
+        <input type="hidden" id="mEventId" />
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn" id="btnDeleteEvent" style="display:none;">Eliminar</button>
+        <button class="btn" id="btnCancelModal">Cancelar</button>
+        <button class="btn primary" id="btnSaveEvent">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * DATA MODEL
+     ***********************/
+    // Tipos:
+    // - clase
+    // - practica
+    // - parcial
+    // - examen
+    // - entrega
+    // - presentacion
+
+    const STORAGE_KEY = "cuatri_events_v1";
+    const STORAGE_PROGRESS = "cuatri_progress_v1";
+    const STORAGE_NOCLASS = "cuatri_noclass_v1";
+
+    // Datos iniciales (parte de lo que me pasaste). Tú irás añadiendo clases luego con “+ Añadir”.
+    // Formato fecha: YYYY-MM-DD
+    const seedEvents = [
+      { id: uid(), date:"2026-02-17", type:"practica", subject:"Materiales Ind", title:"PR Materiales Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-02-18", type:"clase", subject:"Inform Ind", title:"Inform Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-02-23", type:"practica", subject:"Electrónica", title:"PR Electrónica", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-02-24", type:"practica", subject:"Materiales Ind", title:"PR Materiales Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-02-25", type:"clase", subject:"Inform Ind", title:"Inform Ind", start:"11:00", end:"13:00" },
+
+      { id: uid(), date:"2026-03-03", type:"practica", subject:"Materiales Ind", title:"PR Materiales Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-03-03", type:"practica", subject:"Inform Ind", title:"PR Inform Ind", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-03-04", type:"clase", subject:"Inform Ind", title:"Inform Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-03-09", type:"practica", subject:"Electrónica", title:"PR Electrónica", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-03-10", type:"practica", subject:"Materiales Ind", title:"PR Materiales Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-03-10", type:"practica", subject:"Inform Ind", title:"PR Inform Ind", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-03-11", type:"clase", subject:"Inform Ind", title:"Inform Ind", start:"11:00", end:"13:00" },
+
+      { id: uid(), date:"2026-03-16", type:"practica", subject:"Electrónica", title:"PR Electrónica", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-03-17", type:"practica", subject:"Materiales Ind", title:"PR Materiales Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-03-17", type:"practica", subject:"Inform Ind", title:"PR Inform Ind", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-03-18", type:"clase", subject:"Inform Ind", title:"Inform Ind", start:"11:00", end:"13:00" },
+
+      { id: uid(), date:"2026-03-23", type:"practica", subject:"Electrónica", title:"PR Electrónica", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-03-24", type:"parcial", subject:"Electrónica", title:"Electrónica Parcial 4/5", start:"", end:"" },
+      { id: uid(), date:"2026-03-24", type:"practica", subject:"Inform Ind", title:"PR Inform Ind", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-03-25", type:"clase", subject:"Inform Ind", title:"Inform Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-03-26", type:"entrega", subject:"Inform Ind", title:"Entrega Relación 1", start:"", end:"" },
+
+      { id: uid(), date:"2026-04-07", type:"practica", subject:"Materiales Ind", title:"PR Materiales Ind", start:"11:00", end:"13:00" },
+      { id: uid(), date:"2026-04-07", type:"practica", subject:"Inform Ind", title:"PR Inform Ind", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-04-10", type:"entrega", subject:"Inform Ind", title:"Entrega Relación 2", start:"", end:"" },
+      { id: uid(), date:"2026-04-13", type:"practica", subject:"Electrónica", title:"PR Electrónica", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-04-14", type:"parcial", subject:"Resistencia", title:"Resis Parcial", start:"", end:"" },
+      { id: uid(), date:"2026-04-16", type:"parcial", subject:"Materiales Ind", title:"Parcial Materiales 1", start:"", end:"" },
+      { id: uid(), date:"2026-04-24", type:"entrega", subject:"Inform Ind", title:"Entrega Relación 3", start:"", end:"" },
+
+      { id: uid(), date:"2026-05-11", type:"presentacion", subject:"Inform Ind", title:"Exposición Inform Ind", start:"", end:"" },
+      { id: uid(), date:"2026-05-11", type:"practica", subject:"Electrónica", title:"PR Electrónica", start:"13:00", end:"15:00" },
+      { id: uid(), date:"2026-05-14", type:"parcial", subject:"Materiales Ind", title:"Parcial Materiales 2", start:"", end:"" },
+      { id: uid(), date:"2026-05-21", type:"parcial", subject:"Electrónica", title:"Electrónica Parcial 1/2/3", start:"", end:"" },
+      { id: uid(), date:"2026-05-22", type:"entrega", subject:"Inform Ind", title:"Entrega PR2", start:"", end:"" },
+      { id: uid(), date:"2026-05-28", type:"examen", subject:"Materiales Ind", title:"Examen prácticas laboratorio Materiales", start:"", end:"" },
+      { id: uid(), date:"2026-05-29", type:"parcial", subject:"Materiales Ind", title:"Parcial Materiales 3", start:"", end:"" },
+      { id: uid(), date:"2026-05-29", type:"entrega", subject:"Inform Ind", title:"Entrega PR3", start:"", end:"" },
+      // CLASES MATERIALES (10:30–12:00)
+      { id: uid(), date:"2026-02-12", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-02-13", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-02-19", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-02-20", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-02-26", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-02-27", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+
+      { id: uid(), date:"2026-03-05", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-03-06", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-03-12", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-03-13", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-03-19", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-03-20", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-03-26", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-03-27", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+
+      { id: uid(), date:"2026-04-09", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-04-10", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-04-16", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-04-17", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-04-23", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-04-24", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-04-30", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+
+      { id: uid(), date:"2026-05-07", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-05-08", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-05-14", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-05-21", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-05-22", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-05-28", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+      { id: uid(), date:"2026-05-29", type:"clase", subject:"Materiales Ind", title:"Materiales Ind", start:"10:30", end:"12:00" },
+
+      // Finales (según tu tabla)
+      { id: uid(), date:"2026-06-09", type:"examen", subject:"Materiales Ind", title:"Materiales Ind (19–22)", start:"19:00", end:"22:00" },
+      { id: uid(), date:"2026-06-11", type:"examen", subject:"Resistencia", title:"Resistencia (12–15)", start:"12:00", end:"15:00" },
+      { id: uid(), date:"2026-06-12", type:"examen", subject:"Cálculo de Máquinas I", title:"Cálculo de Máquinas I (16–19)", start:"16:00", end:"19:00" },
+      { id: uid(), date:"2026-06-18", type:"examen", subject:"Estructuras Ind", title:"Estructuras Ind (9–12)", start:"09:00", end:"12:00" },
+
+      // Extraordinaria (ojo solapes en julio)
+      { id: uid(), date:"2026-06-29", type:"examen", subject:"Materiales Ind", title:"Materiales Ind (9–12)", start:"09:00", end:"12:00" },
+      { id: uid(), date:"2026-07-02", type:"examen", subject:"Cálculo de Máquinas I", title:"Cálculo de Máquinas I (9–12)", start:"09:00", end:"12:00" },
+      { id: uid(), date:"2026-07-02", type:"examen", subject:"Electrónica", title:"Electrónica (12–15)", start:"12:00", end:"15:00" },
+      { id: uid(), date:"2026-07-06", type:"examen", subject:"Resistencia", title:"Resistencia (12–15)", start:"12:00", end:"15:00" },
+      { id: uid(), date:"2026-07-07", type:"examen", subject:"Estructuras Ind", title:"Estructuras Ind (9–12)", start:"09:00", end:"12:00" },
+    ];
+
+    // DÍAS SIN CLASE (los azules). Aquí lo dejo editable.
+    // Puedes meterlos a mano aquí, o marcarlos desde el modal con “¿Día sin clase?”
+    const seedNoClassDays = [
+      // Ejemplos (mete aquí los azules reales si quieres):
+      // "2026-02-21","2026-02-22","2026-02-28"
+    ];
+
+    // Progreso por asignatura y temas (editable desde la UI)
+    const seedProgress = {
+      "Electrónica": [
+        { name:"1. Semiconductores", sub:null },
+        { name:"2. Diodos", sub:null },
+        { name:"3. Transistores", sub:null },
+        { name:"4. Amplificadores Ideales", sub:null },
+        { name:"5. Amplificadores Reales", sub:null }
+      ],
+      "Materiales Ind": [
+        {
+          name:"1. Materiales Ingenieriles",
+          sub:[
+            "Materiales metálicos",
+            "Polímeros",
+            "Cerámicos",
+            "Compuestos"
+          ]
+        },
+        {
+          name:"2. Durabilidad de Materiales",
+          sub:[
+            "Corrosión de metales",
+            "Degradación de cerámicos",
+            "Degradación de polímeros",
+            "Comportamiento en servicio"
+          ]
+        },
+        {
+          name:"3. Selección de Materiales",
+          sub:[
+            "Métodos de selección",
+            "Criterios mecánicos y económicos"
+          ]
+        }
+      ],
+      "Inform Ind": [],
+      "Resistencia": [
+        { name:"1. Reacciones", sub:null },
+        { name:"2. Elasticidad", sub:null },
+        { name:"3. Esfuerzo axial (isostático e hiperestático – Castigliano / Ritter)", sub:null },
+        { name:"4. Flexión y cortante", sub:null },
+        { name:"5. Flexión con deformaciones (flecha / Gauss)", sub:null },
+        { name:"6. Deformaciones (ECE, T. Mohr I y II, Método de Mohr energético, Mohr generalizada)", sub:null },
+        { name:"7. Perfiles IPN", sub:null }
+      ],
+"Cálculo de Máquinas I": [
+  { name:"Tema 1. Fundamentos del diseño mecánico", sub:null },
+  { name:"Tema 2. Materiales y sus propiedades", sub:null },
+  { name:"Tema 3. Teorías de fallo estático", sub:null },
+  { name:"Tema 4. Diseño por resistencia a la fatiga", sub:null },
+  { name:"Tema 5. Fallas superficiales", sub:null },
+  { name:"Tema 6. Dimensionado de ejes y árboles", sub:null },
+  { name:"Tema 7. Velocidades críticas en ejes", sub:null },
+  { name:"Tema 8. Análisis mediante elementos finitos", sub:null },
+  { name:"Tema 9. Cojinetes de rodamiento", sub:null },
+  { name:"Tema 10. Cojinetes de deslizamiento", sub:null }
+],
+
+"Estructuras Ind": [
+  {
+    name:"1º Bloque: Bases de cálculo de Estructura Metálica según CTE",
+    sub:[
+      "Tema 1. El acero en construcción",
+      "Tema 2. Partes principales de una nave industrial",
+      "Tema 3. Bases de cálculo",
+      "Tema 4. Dimensionado de soportes o pilares",
+      "Tema 5. Uniones de barras",
+      "Tema 6. Dimensionado de vigas"
+    ]
+  },
+  {
+    name:"2º Bloque: Hormigón armado",
+    sub:[
+      "Tema 7. Bases de cálculo de Estados límite",
+      "Tema 8. Estado límite último bajo solicitaciones de cálculo",
+      "Tema 9. Estado límite de agotamiento a cortante"
+    ]
+  },
+  {
+    name:"3º Bloque: Cimentación",
+    sub:[
+      "Tema 10. Conceptos y tipos de cimentación",
+      "Tema 11. Cálculo de cimentaciones superficiales",
+      "Tema 12. Estudio geotécnico del terreno. Asientos en cimentaciones"
+    ]
+  }
+]
+
+    };
+
+    let events = loadOrInitEvents();
+let noClassDays = loadOrInitNoClass();
+let progress = loadOrInitProgress();
+
+// 🔵 Unificar cualquier variante "Electrónica Básica" -> "Electrónica"
+let changed = false;
+events.forEach(e => {
+  if((e.subject||"").toLowerCase().includes("electrónica básica")){
+    e.subject = "Electrónica";
+    changed = true;
+  }
+});
+if(changed) saveEvents();
+
+// 🧹 Eliminar posibles duplicados de evaluaciones (misma fecha + tipo + asignatura + título)
+(function cleanDuplicateEvaluations(){
+  const seen = new Set();
+  events = events.filter(e => {
+    if(!['examen','parcial','presentacion'].includes(e.type)) return true;
+    const key = [e.date,e.type,(e.subject||'').toLowerCase(),(e.title||'').toLowerCase()].join('|');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  saveEvents();
+})();
+
+// También unificar en progreso si existiera clave antigua
+if(progress && progress["Electrónica Básica"]){
+  delete progress["Electrónica Básica"];
+  saveProgress();
+}
+
+// 🔧 Forzar estructura limpia de temas para Electrónica (mantener estructura correcta)
+if(progress["Electrónica"]){
+  const current = progress["Electrónica"];
+  const needsFix = !current.length || typeof current[0].name !== "string";
+
+  if(needsFix){
+    progress["Electrónica"] = seedProgress["Electrónica"].map(t => ({
+      name: t.name,
+      score: 0
+    }));
+    saveProgress();
+  }
+}
+
+// 🔧 Forzar estructura correcta de Materiales Ind con subtemas si no existen
+if(progress["Materiales Ind"]){
+  const current = progress["Materiales Ind"];
+  const needsUpgrade = !current.some(t => Array.isArray(t.sub));
+
+  if(needsUpgrade){
+    progress["Materiales Ind"] = seedProgress["Materiales Ind"].map(t => ({
+      name: t.name,
+      sub: t.sub.map(s => ({ name:s, score:0 }))
+    }));
+    saveProgress();
+  }
+}
+
+// 🔧 Forzar actualización de Resistencia si tenía temas genéricos antiguos
+if(progress["Resistencia"]){
+  const current = progress["Resistencia"];
+  const isGeneric = current.every(t => (t.name||"").toLowerCase().includes("tema"));
+
+  if(isGeneric){
+    progress["Resistencia"] = seedProgress["Resistencia"].map(t => ({
+      name: t.name,
+      score: 0
+    }));
+    saveProgress();
+  }
+}
+
+
+// 🔧 Limpiar temas antiguos que no estén en seed (Cálculo de Máquinas I)
+if(progress["Cálculo de Máquinas I"]){
+  const seedNames = seedProgress["Cálculo de Máquinas I"].map(t => t.name);
+
+  progress["Cálculo de Máquinas I"] = progress["Cálculo de Máquinas I"]
+    .filter(t => seedNames.includes(t.name));
+
+  saveProgress();
+}
+
+
+
+// 🔧 Forzar estructura correcta de Estructuras Ind con bloques y subtemas
+if(progress["Estructuras Ind"]){
+  const current = progress["Estructuras Ind"];
+  const needsUpgrade = !current.some(t => Array.isArray(t.sub));
+
+  if(needsUpgrade){
+    progress["Estructuras Ind"] = seedProgress["Estructuras Ind"].map(t => ({
+      name: t.name,
+      sub: t.sub.map(s => ({ name:s, score:0 }))
+    }));
+    saveProgress();
+  }
+}
+
+
+// 🔄 Sincronizar automáticamente seedProgress con localStorage (añade temas nuevos sin borrar progreso)
+(function syncProgressWithSeed(){
+  for(const subject of Object.keys(seedProgress)){
+    if(!progress[subject]){
+      // Si no existe la asignatura, crearla entera
+      progress[subject] = seedProgress[subject].map(t=>{
+        if(t.sub){
+          return { name:t.name, sub:t.sub.map(s=>({ name:s, score:0 })) };
+        }
+        return { name:t.name, score:0 };
+      });
+      continue;
+    }
+
+    const current = progress[subject];
+
+    seedProgress[subject].forEach(seedTheme=>{
+      const existing = current.find(t => t.name === seedTheme.name);
+
+      if(!existing){
+        // Tema nuevo → añadirlo
+        if(seedTheme.sub){
+          current.push({
+            name: seedTheme.name,
+            sub: seedTheme.sub.map(s=>({ name:s, score:0 }))
+          });
+        } else {
+          current.push({ name: seedTheme.name, score:0 });
+        }
+      }
+
+      // Si tiene subtemas, comprobar subtemas nuevos
+      if(seedTheme.sub && existing){
+        if(!existing.sub) existing.sub = [];
+
+        seedTheme.sub.forEach(subName=>{
+          if(!existing.sub.some(s=>s.name === subName)){
+            existing.sub.push({ name:subName, score:0 });
+          }
+        });
+      }
+    });
+  }
+
+  saveProgress();
+})();
+
+
+
+// 🔧 Generar temas automáticos para Inform Ind a partir de entregas/presentaciones
+(function syncInformIndFromEvents(){
+  const titles = events
+    .filter(e => (e.subject||"").toLowerCase() === "inform ind")
+    .filter(e => ["entrega","presentacion"].includes(e.type) || (e.type === "practica" && (e.title||"").toLowerCase().includes("pr")))
+    .map(e => e.title?.trim())
+    .filter(Boolean);
+
+  const unique = [...new Set(titles)].sort((a,b)=>a.localeCompare(b));
+
+  if(!progress["Inform Ind"]) progress["Inform Ind"] = [];
+
+  const existingNames = new Set(progress["Inform Ind"].map(t => t.name));
+
+  // Añadir las nuevas si no existen
+  unique.forEach(name => {
+    if(!existingNames.has(name)){
+      progress["Inform Ind"].push({ name, score: 0 });
+    }
+  });
+
+  // Eliminar temas que ya no existan como entrega real
+  progress["Inform Ind"] = progress["Inform Ind"].filter(t => unique.includes(t.name));
+
+  saveProgress();
+})();
+
+
+// 🏗 GENERAR CLASES DE ESTRUCTURAS AUTOMÁTICAMENTE
+(function generarEstructuras(){
+  const inicio = new Date(2026, 1, 1);   // 1 Feb 2026
+  const fin = new Date(2026, 4, 29);     // 29 May 2026 (último día de clase)
+
+  const vacacionesInicio = new Date(2026, 2, 28); // 28 Mar 2026
+  const vacacionesFin = new Date(2026, 3, 5);     // 5 Abr 2026
+
+  const sig = (e) => [e.date,e.type,e.subject,e.title,e.start,e.end].join("|");
+  const existing = new Set(events.map(sig));
+
+  for(let d = new Date(inicio); d <= fin; d.setDate(d.getDate()+1)){
+    const dia = new Date(d);
+    const y = dia.getFullYear();
+    const m = String(dia.getMonth()+1).padStart(2,"0");
+    const day = String(dia.getDate()).padStart(2,"0");
+    const fecha = `${y}-${m}-${day}`;
+
+    // Semana Santa azul claro
+    if(dia >= vacacionesInicio && dia <= vacacionesFin){
+      if(!noClassDays.includes(fecha)) noClassDays.push(fecha);
+      continue;
+    }
+
+    const weekday = dia.getDay();
+
+    // Jueves (4) y Viernes (5) -> Clase 9:00–10:30
+    if(weekday === 4 || weekday === 5){
+      const obj = {
+        id: uid(),
+        date: fecha,
+        type: "clase",
+        subject: "Estructuras Ind",
+        title: "Estructuras Ind",
+        start: "09:00",
+        end: "10:30"
+      };
+      if(!existing.has(sig(obj))){
+        events.push(obj);
+        existing.add(sig(obj));
+      }
+    }
+
+    // Lunes (1) -> Ejercicios 13:00–15:00
+    if(weekday === 1){
+      const obj = {
+        id: uid(),
+        date: fecha,
+        type: "clase",
+        subject: "Estructuras Ind",
+        title: "Estructuras Ind – Ejercicios",
+        start: "13:00",
+        end: "15:00"
+      };
+      if(!existing.has(sig(obj))){
+        events.push(obj);
+        existing.add(sig(obj));
+      }
+    }
+  }
+
+  saveEvents();
+  saveNoClass();
+})();
+
+
+
+
+
+
+
+
+// ⚙️ GENERAR CLASES CÁLCULO DE MÁQUINAS I (hasta último día de clase)
+(function generarCalculoMaquinas(){
+  const inicio = new Date(2026,1,9);   // 9 Feb 2026
+  const fin = new Date(2026,4,29);     // 29 May 2026
+
+  const sig = (e) => [e.date,e.type,e.subject,e.title,e.start,e.end].join("|");
+  const existing = new Set(events.map(sig));
+
+  for(let d = new Date(inicio); d <= fin; d.setDate(d.getDate()+1)){
+    const dia = new Date(d);
+    const weekday = dia.getDay();
+
+    const y = dia.getFullYear();
+    const m = String(dia.getMonth()+1).padStart(2,"0");
+    const day = String(dia.getDate()).padStart(2,"0");
+    const fecha = `${y}-${m}-${day}`;
+
+    // Miércoles → Prácticas 13:00–15:00
+    if(weekday === 3){
+      const obj = {
+        id: uid(),
+        date: fecha,
+        type: "practica",
+        subject: "Cálculo de Máquinas I",
+        title: "Cálculo de Máquinas I – Prácticas",
+        start: "13:00",
+        end: "15:00"
+      };
+      if(!existing.has(sig(obj))){
+        events.push(obj);
+        existing.add(sig(obj));
+      }
+    }
+
+    // Jueves y Viernes → Teoría 12:00–13:30
+    if(weekday === 4 || weekday === 5){
+      const obj = {
+        id: uid(),
+        date: fecha,
+        type: "clase",
+        subject: "Cálculo de Máquinas I",
+        title: "Cálculo de Máquinas I",
+        start: "12:00",
+        end: "13:30"
+      };
+      if(!existing.has(sig(obj))){
+        events.push(obj);
+        existing.add(sig(obj));
+      }
+    }
+  }
+
+  // Parcial 9 de abril
+  const parcial = {
+    id: uid(),
+    date: "2026-04-09",
+    type: "parcial",
+    subject: "Cálculo de Máquinas I",
+    title: "Parcial Cálculo de Máquinas I",
+    start: "",
+    end: ""
+  };
+  if(!existing.has(sig(parcial))){
+    events.push(parcial);
+  }
+
+  saveEvents();
+})();
+
+
+// 🎀 GENERAR CURSO SOLIDWORKS (9/3–26/3, lunes y jueves 16–19)
+(function generarSolidworks(){
+  const inicio = new Date(2026,2,9);
+  const fin = new Date(2026,2,26);
+
+  const sig = (e) => [e.date,e.type,e.subject,e.title,e.start,e.end].join("|");
+  const existing = new Set(events.map(sig));
+
+  for(let d = new Date(inicio); d <= fin; d.setDate(d.getDate()+1)){
+    const dia = new Date(d);
+    const weekday = dia.getDay();
+
+    if(weekday === 1 || weekday === 4){ // lunes o jueves
+      const y = dia.getFullYear();
+      const m = String(dia.getMonth()+1).padStart(2,"0");
+      const day = String(dia.getDate()).padStart(2,"0");
+      const fecha = `${y}-${m}-${day}`;
+
+      const obj = {
+        id: uid(),
+        date: fecha,
+        type: "clase",
+        subject: "SolidWorks",
+        title: "Curso SolidWorks",
+        start: "16:00",
+        end: "19:00"
+      };
+
+      if(!existing.has(sig(obj))){
+        events.push(obj);
+        existing.add(sig(obj));
+      }
+    }
+  }
+
+  saveEvents();
+})();
+
+
+
+
+
+
+
+
+    
+
+    /***********************
+     * UI ELEMENTS
+     ***********************/
+    const pillRange = document.getElementById("pillRange");
+
+    const tabs = [...document.querySelectorAll(".tab")];
+    const panels = [...document.querySelectorAll(".panel")];
+
+    const viewMode = document.getElementById("viewMode");
+    const filterTypeAll = document.getElementById("filterTypeAll");
+    const filterSubjectAll = document.getElementById("filterSubjectAll");
+
+    const calendarDayView = document.getElementById("calendarDayView");
+    const calendarMonthView = document.getElementById("calendarMonthView");
+
+    const filterSubjectEval = document.getElementById("filterSubjectEval");
+    const searchEval = document.getElementById("searchEval");
+    const evalsDayView = document.getElementById("evalsDayView");
+
+    const filterSubjectDel = document.getElementById("filterSubjectDel");
+    const searchDel = document.getElementById("searchDel");
+    const deliveriesDayView = document.getElementById("deliveriesDayView");
+
+    const subjectButtonsBar = document.getElementById("subjectButtonsBar");
+    const btnAddTheme = document.getElementById("btnAddTheme");
+    const subjectsView = document.getElementById("subjectsView");
+
+    // Modal
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const btnAdd = document.getElementById("btnAdd");
+    const btnCloseModal = document.getElementById("btnCloseModal");
+    const btnCancelModal = document.getElementById("btnCancelModal");
+    const btnSaveEvent = document.getElementById("btnSaveEvent");
+    const btnDeleteEvent = document.getElementById("btnDeleteEvent");
+
+    const mEventId = document.getElementById("mEventId");
+    const mDate = document.getElementById("mDate");
+    const mType = document.getElementById("mType");
+    const mSubject = document.getElementById("mSubject");
+    const mStart = document.getElementById("mStart");
+    const mEnd = document.getElementById("mEnd");
+    const mTitle = document.getElementById("mTitle");
+    const mNotes = document.getElementById("mNotes");
+    const mNoClass = document.getElementById("mNoClass");
+
+    /***********************
+     * INIT
+     ***********************/
+    setupTabs();
+    hydrateSubjectFilters();
+    updateRangePill();
+    renderAll();
+
+    // Listeners
+    if(viewMode) viewMode.addEventListener("change", () => {
+      const isMonth = viewMode.value === "month";
+      calendarDayView.style.display = isMonth ? "none" : "block";
+      calendarMonthView.style.display = isMonth ? "block" : "block";
+      renderCalendarTab();
+    });
+
+    if(filterTypeAll) filterTypeAll.addEventListener("change", renderCalendarTab);
+    if(filterSubjectAll) filterSubjectAll.addEventListener("change", renderCalendarTab);
+
+    if(filterSubjectEval) filterSubjectEval.addEventListener("change", renderEvalsTab);
+    if(searchEval) searchEval.addEventListener("input", renderEvalsTab);
+
+    if(filterSubjectDel) filterSubjectDel.addEventListener("change", renderDeliveriesTab);
+    if(searchDel) searchDel.addEventListener("input", renderDeliveriesTab);
+
+    if(btnAddTheme){
+      btnAddTheme.addEventListener("click", addThemeFlow);
+    }
+
+    if(btnAdd) btnAdd.addEventListener("click", () => openModalForNew());
+    if(btnCloseModal) btnCloseModal.addEventListener("click", closeModal);
+    if(btnCancelModal) btnCancelModal.addEventListener("click", closeModal);
+    if(modalBackdrop) modalBackdrop.addEventListener("click", (e) => { if(e.target === modalBackdrop) closeModal(); });
+
+    if(btnSaveEvent) btnSaveEvent.addEventListener("click", saveFromModal);
+    if(btnDeleteEvent) btnDeleteEvent.addEventListener("click", deleteFromModal);
+
+    /***********************
+     * TABS
+     ***********************/
+    function setupTabs(){
+      tabs.forEach(t => {
+        t.addEventListener("click", () => {
+          tabs.forEach(x => x.classList.remove("active"));
+          panels.forEach(p => p.classList.remove("active"));
+          t.classList.add("active");
+          document.getElementById(t.dataset.tab).classList.add("active");
+        });
+      });
+    }
+
+    /***********************
+     * RENDER
+     ***********************/
+    function renderAll(){
+      renderCalendarTab();
+      renderEvalsTab();
+      renderDeliveriesTab();
+      renderSubjectsTab();
+    }
+
+    function renderCalendarTab(){
+      const type = filterTypeAll.value;
+      const subj = filterSubjectAll.value;
+
+      const filtered = events
+        .filter(e => type === "all" ? true : e.type === type)
+        .filter(e => subj === "all" ? true : (e.subject || "").toLowerCase() === subj.toLowerCase());
+
+      if(viewMode.value === "day"){
+        calendarDayView.style.display = "block";
+        calendarMonthView.style.display = "none";
+        calendarDayView.innerHTML = renderDayScroll(filtered, { includeNoClass:true });
+      } else {
+        calendarDayView.style.display = "none";
+        calendarMonthView.style.display = "block";
+        calendarMonthView.innerHTML = renderMonthView(filtered);
+        wireMonthClicks();
+      }
+    }
+
+    function renderEvalsTab(){
+      const subj = filterSubjectEval.value;
+      const q = (searchEval.value || "").trim().toLowerCase();
+      const evalTypes = new Set(["examen","parcial","presentacion"]);
+
+      const filtered = events
+        .filter(e => evalTypes.has(e.type))
+        .filter(e => subj === "all" ? true : (e.subject || "").toLowerCase() === subj.toLowerCase())
+        .filter(e => q ? (toSearchText(e).includes(q)) : true);
+
+      evalsDayView.innerHTML = renderDayScroll(filtered, { includeNoClass:false });
+    }
+
+    function renderDeliveriesTab(){
+      const subj = filterSubjectDel.value;
+      const q = (searchDel.value || "").trim().toLowerCase();
+
+      const filtered = events
+        .filter(e => e.type === "entrega" || (e.type === "practica" && (e.title||"").toLowerCase().includes("pr")))
+        .filter(e => subj === "all" ? true : (e.subject || "").toLowerCase() === subj.toLowerCase())
+        .filter(e => q ? (toSearchText(e).includes(q)) : true);
+
+      deliveriesDayView.innerHTML = renderDayScroll(filtered, { includeNoClass:false });
+    }
+
+    function renderSubjectsTab(selectedSubject){
+      const subjects = Object.keys(progress).sort((a,b)=>a.localeCompare(b));
+      const current = selectedSubject || window.__currentSubject || subjects[0];
+      window.__currentSubject = current;
+
+      subjectButtonsBar.innerHTML = subjects.map(s =>
+        `<button class="tab ${s===current?"active":""}" data-subject="${escapeAttr(s)}">${escapeHtml(s)}</button>`
+      ).join("");
+      subjectButtonsBar.querySelectorAll("button").forEach(btn=>{
+        btn.addEventListener("click",()=>renderSubjectsTab(btn.dataset.subject));
+      });
+
+      const subject = current;
+      const themes = progress[subject] || [];
+      const avg = averageScore(subject);
+
+const themeHtml = themes.map((t,i)=>{
+
+  const isComplex = Array.isArray(t.sub);
+  let themeAvg = 0;
+
+  if(isComplex){
+    const sum = t.sub.reduce((a,s)=>a+(s.score||0),0);
+    themeAvg = t.sub.length ? Math.round(sum/t.sub.length) : 0;
+  } else {
+    themeAvg = t.score || 0;
+  }
+
+  let innerHtml = "";
+
+  if(isComplex){
+    innerHtml = `
+      <div class="themes" style="margin-top:8px;">
+        ${t.sub.map((s,j)=>`
+          <div class="theme">
+            <div class="theme-left">
+              <p class="theme-title">${escapeHtml(s.name)}</p>
+            </div>
+            <div class="theme-right">
+              <div class="bar"><div style="width:${s.score||0}%"></div></div>
+              <input class="input score" type="number" min="0" max="100"
+                data-sub="${i}" data-subidx="${j}" value="${s.score||0}" />
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  } else {
+    innerHtml = `
+      <div class="row" style="width:100%; margin-top:8px;">
+        <div class="bar"><div style="width:${themeAvg}%"></div></div>
+        <input class="input score" type="number" min="0" max="100"
+          data-theme="${i}" value="${themeAvg}" />
+      </div>
+    `;
+  }
+
+  return `
+    <div class="theme" style="flex-direction:column;align-items:stretch;">
+      <div class="row" style="width:100%;">
+        <div class="theme-left">
+          <p class="theme-title">${escapeHtml(t.name)}</p>
+        </div>
+        ${isComplex ? `
+          <div class="theme-right">
+            <div class="bar"><div style="width:${themeAvg}%"></div></div>
+            <div class="score">${themeAvg}%</div>
+          </div>
+        ` : ``}
+      </div>
+      ${innerHtml}
+    </div>
+  `;
+
+}).join("");
+
+
+
+      subjectsView.innerHTML = `
+        <div class="card subject-block">
+          <div class="subject-head">
+            <div>
+              <p class="subject-name">${escapeHtml(subject)}</p>
+              <div class="subject-summary">Media total: <b>${avg}</b>/100</div>
+            </div>
+          </div>
+          <div class="themes">${themeHtml}</div>
+        </div>
+      `;
+
+      subjectsView.querySelectorAll('input.score').forEach(inp=>{
+        inp.addEventListener("input",e=>{
+          const val = clamp(parseInt(e.target.value||0,10),0,100);
+
+          if(e.target.dataset.sub !== undefined){
+            const sub = parseInt(e.target.dataset.sub,10);
+            const subidx = parseInt(e.target.dataset.subidx,10);
+            progress[subject][sub].sub[subidx].score = val;
+          } else if(e.target.dataset.theme !== undefined){
+            const idx = parseInt(e.target.dataset.theme,10);
+            progress[subject][idx].score = val;
+          }
+
+          saveProgress();
+          renderSubjectsTab(subject);
+        });
+      });
+
+    }
+
+
+    /***********************
+     * DAY SCROLL RENDER
+     ***********************/
+    function renderEventCard(e){
+      const tag = typeToTag(e.type);
+      const isSolid = (e.subject||"").toLowerCase().includes("solidworks");
+      const time = e.start ? `${e.start}${e.end ? `–${e.end}` : ""}` : "";
+      return `
+        <div class="event ${isSolid ? 'solidworks' : (tag.cls === 'type-evaluacion' ? 'type-evaluacion' : '')}" data-id="${e.id}">
+          <div class="event-left">
+            <p class="event-title">${escapeHtml(e.title || "(Sin título)")}</p>
+            <div class="event-meta">
+              ${time ? `<span>${time}</span>` : ``}
+              ${e.subject ? `<span>${escapeHtml(e.subject)}</span>` : ``}
+              <span class="tag ${isSolid ? 'solidworks-tag' : tag.cls}">${isSolid ? 'Curso' : tag.label}</span>
+            </div>
+          </div>
+          <div class="event-actions">
+            <button class="iconbtn" data-edit="${e.id}" title="Editar">✎</button>
+            <button class="iconbtn danger" data-del="${e.id}" title="Eliminar">🗑</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDayScroll(list, { includeNoClass }){
+      const byDate = groupByDate(list);
+      const range = getRangeForDays();
+      const days = enumerateDays(range.min, range.max);
+      const todayKey = fmtDate(range.today);
+
+      // 🔥 Si NO es calendario total (includeNoClass=false),
+      // solo mostramos días que tengan eventos
+      const daysToRender = includeNoClass
+        ? days
+        : days.filter(d => {
+            const key = fmtDate(d);
+            return (byDate.get(key) || []).length > 0;
+          });
+
+      const html = daysToRender.map(d => {
+        const key = fmtDate(d);
+        const eventsForDay = (byDate.get(key) || []).slice().sort(sortByTime);
+
+        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+        const isNoClass = includeNoClass && (noClassDays.includes(key) || isWeekend);
+        const isPast = key < todayKey;
+        const subtitle = weekdayLabel(d) + " · " + key;
+
+        return `
+          <div class="card day-block ${isPast ? "past-day" : ""}" data-day="${key}" 
+               style="${isNoClass ? `background: linear-gradient(180deg, rgba(122,167,255,.14), rgba(255,255,255,.03)); border-color: rgba(122,167,255,.18);` : ""}">
+            <div class="day-head">
+              <div>
+                <p class="day-date">${prettyDate(d)}</p>
+                <div class="day-sub">${subtitle}</div>
+              </div>
+              ${isNoClass ? `<div class="noclass-badge">Día sin clase</div>` : ``}
+            </div>
+
+            <div class="events">
+              ${eventsForDay.map(renderEventCard).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Scroll automático a hoy solo en calendario total
+      if(includeNoClass){
+        setTimeout(()=>{
+          const el = document.querySelector(`.day-block[data-day="${todayKey}"]`);
+          if(el) el.scrollIntoView({ behavior:"auto", block:"start" });
+        },0);
+      }
+
+      return html;
+    }
+
+    function showMonthDayDetails(dayKey){
+      const details = document.getElementById("monthDayDetails");
+      if(!details) return;
+
+      const day = parseDate(dayKey);
+      const title = details.querySelector(".day-date");
+      const sub = details.querySelector(".day-sub");
+      const evWrap = details.querySelector(".events");
+
+      title.textContent = prettyDate(day);
+      sub.textContent = weekdayLabel(day) + " · " + dayKey + (noClassDays.includes(dayKey) ? " · Día sin clase" : "");
+
+      // apply same filters as calendar tab
+      const type = filterTypeAll.value;
+      const subj = filterSubjectAll.value;
+
+      const filtered = events
+        .filter(e => e.date === dayKey)
+        .filter(e => type === "all" ? true : e.type === type)
+        .filter(e => subj === "all" ? true : (e.subject || "").toLowerCase() === subj.toLowerCase())
+        .sort(sortByTime);
+
+      evWrap.innerHTML = filtered.length ? filtered.map(renderEventCard).join("") : `<div class="hint">Nada apuntado.</div>`;
+      wireListActions(details);
+    }
+
+    /***********************
+     * MODAL LOGIC
+     ***********************/
+    function openModalForNew(){
+      mEventId.value = "";
+      mDate.value = fmtDate(new Date());
+      mType.value = "clase";
+      mSubject.value = "";
+      mStart.value = "";
+      mEnd.value = "";
+      mTitle.value = "";
+      mNotes.value = "";
+      mNoClass.checked = false;
+
+      btnDeleteEvent.style.display = "none";
+      showModal();
+    }
+
+    function openModalForEdit(id){
+      const e = events.find(x => x.id === id);
+      if(!e) return;
+
+      mEventId.value = e.id;
+      mDate.value = e.date;
+      mType.value = e.type || "clase";
+      mSubject.value = e.subject || "";
+      mStart.value = e.start || "";
+      mEnd.value = e.end || "";
+      mTitle.value = e.title || "";
+      mNotes.value = e.notes || "";
+      mNoClass.checked = noClassDays.includes(e.date);
+
+      btnDeleteEvent.style.display = "inline-flex";
+      showModal();
+    }
+
+    function showModal(){
+      modalBackdrop.classList.add("show");
+      modalBackdrop.setAttribute("aria-hidden","false");
+      setTimeout(()=> mTitle.focus(), 50);
+    }
+
+    function closeModal(){
+      modalBackdrop.classList.remove("show");
+      modalBackdrop.setAttribute("aria-hidden","true");
+    }
+
+    function saveFromModal(){
+      const id = mEventId.value || uid();
+      const date = mDate.value;
+      const type = mType.value;
+      const subject = (mSubject.value || "").trim();
+      const title = (mTitle.value || "").trim();
+      const start = mStart.value || "";
+      const end = mEnd.value || "";
+      const notes = (mNotes.value || "").trim();
+
+      if(!date){
+        alert("Pon una fecha.");
+        return;
+      }
+      if(!title){
+        alert("Pon un título (aunque sea corto).");
+        return;
+      }
+
+      // No class day toggle
+      if(mNoClass.checked){
+        if(!noClassDays.includes(date)) noClassDays.push(date);
+      } else {
+        noClassDays = noClassDays.filter(d => d !== date);
+      }
+      saveNoClass();
+
+      const existingIdx = events.findIndex(x => x.id === id);
+      const obj = { id, date, type, subject, title, start, end, notes };
+
+      if(existingIdx >= 0) events[existingIdx] = obj;
+      else events.push(obj);
+
+      saveEvents();
+      hydrateSubjectFilters();
+      updateRangePill();
+      renderAll();
+      closeModal();
+    }
+
+    function deleteFromModal(){
+      const id = mEventId.value;
+      if(!id) return;
+      events = events.filter(x => x.id !== id);
+      saveEvents();
+      hydrateSubjectFilters();
+      updateRangePill();
+      renderAll();
+      closeModal();
+    }
+
+    /***********************
+     * SUBJECT FILTERS
+     ***********************/
+    function hydrateSubjectFilters(){
+      const subjects = getAllSubjects();
+
+      fillSelect(filterSubjectAll, subjects, "Asignatura: Todas");
+      fillSelect(filterSubjectEval, subjects, "Asignatura: Todas");
+      fillSelect(filterSubjectDel, subjects, "Asignatura: Todas");
+
+      // En asignaturas usamos botones, no dropdown
+    }
+
+    function fillSelect(sel, subjects, firstLabel){
+      const current = sel.value || "all";
+      sel.innerHTML = `<option value="all">${firstLabel}</option>` + subjects.map(s =>
+        `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`
+      ).join("");
+
+      // restore if possible
+      const exists = [...sel.options].some(o => o.value === current);
+      sel.value = exists ? current : "all";
+    }
+
+    /***********************
+     * PROGRESS
+     ***********************/
+    function loadOrInitProgress(){
+      const raw = localStorage.getItem(STORAGE_PROGRESS);
+      if(raw){
+        try{ return JSON.parse(raw); } catch(e){}
+      }
+      const init = {};
+      for(const subject of Object.keys(seedProgress)){
+        init[subject] = seedProgress[subject].map(t => {
+          if(t.sub){
+            return { name:t.name, sub:t.sub.map(s=>({ name:s, score:0 })) };
+          }
+          return { name:t.name, score:0 };
+        });
+      }
+      localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(init));
+      return init;
+    }
+
+    function saveProgress(){
+      localStorage.setItem(STORAGE_PROGRESS, JSON.stringify(progress));
+    }
+
+    function getScore(subject, themeName){
+      const arr = progress[subject] || [];
+      const obj = arr.find(t => t.name === themeName);
+      return obj ? (obj.score ?? 0) : 0;
+    }
+
+    function setScore(subject, themeName, val){
+      if(!progress[subject]) progress[subject] = [];
+      const arr = progress[subject];
+      const obj = arr.find(t => t.name === themeName);
+      if(obj) obj.score = val;
+      else arr.push({ name: themeName, score: val });
+    }
+
+    function averageScore(subject){
+      const arr = progress[subject] || [];
+      if(!arr.length) return 0;
+      const vals = arr.map(t=>{
+        if(t.sub){
+          const sum = t.sub.reduce((a,s)=>a+(s.score||0),0);
+          return t.sub.length ? sum/t.sub.length : 0;
+        }
+        return t.score||0;
+      });
+      const total = vals.reduce((a,b)=>a+b,0);
+      return Math.round(total/vals.length);
+    }
+
+    // Color estable por tema (HSL según hash)
+    function themeColor(name){
+      const s = String(name||"");
+      let h = 0;
+      for(let i=0;i<s.length;i++) h = (h*31 + s.charCodeAt(i)) >>> 0;
+      const hue = h % 360;
+      return `hsl(${hue} 80% 60%)`;
+    }
+
+    function addThemeFlow(forceSubject){
+      let subject = forceSubject;
+      if(!subject){
+        alert("Selecciona una asignatura primero.");
+        return;
+      }
+      const theme = (prompt(`Nuevo tema para "${subject}"`) || "").trim();
+      if(!theme) return;
+
+      if(!progress[subject]) progress[subject] = [];
+      if(progress[subject].some(t => t.name.toLowerCase() === theme.toLowerCase())){
+        alert("Ese tema ya existe.");
+        return;
+      }
+      progress[subject].push({ name: theme, score: 0 });
+      saveProgress();
+      hydrateSubjectFilters();
+      renderSubjectsTab();
+    }
+
+    /***********************
+     * EVENTS STORAGE
+     ***********************/
+    function loadOrInitEvents(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        try{
+          const stored = JSON.parse(raw);
+          if(Array.isArray(stored)){
+            const merged = stored.slice();
+
+            // Merge in any new seedEvents added in code updates (so you don't lose your custom events).
+            // We match by a stable signature (date+type+subject+title+start+end+notes).
+            const sig = (e) => [
+              e.date||"", e.type||"", (e.subject||"").trim(), (e.title||"").trim(),
+              e.start||"", e.end||"", (e.notes||"").trim()
+            ].join("|").toLowerCase();
+
+            const have = new Set(merged.map(sig));
+            for(const s of seedEvents){
+              const sSig = sig(s);
+              if(!have.has(sSig)){
+                merged.push({ ...s });
+                have.add(sSig);
+              }
+            }
+
+            // Persist merged back (so next refresh is consistent)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+            return merged;
+          }
+        } catch(e) {
+          // fall through to re-init
+        }
+      }
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seedEvents));
+      return seedEvents.slice();
+    }
+
+    function saveEvents(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    }
+
+    /***********************
+     * NO CLASS DAYS STORAGE
+     ***********************/
+    function loadOrInitNoClass(){
+      const raw = localStorage.getItem(STORAGE_NOCLASS);
+      if(raw){
+        try{ return JSON.parse(raw); } catch(e){}
+      }
+      localStorage.setItem(STORAGE_NOCLASS, JSON.stringify(seedNoClassDays));
+      return seedNoClassDays.slice();
+    }
+
+    function saveNoClass(){
+      // unique + sorted
+      noClassDays = [...new Set(noClassDays)].sort();
+      localStorage.setItem(STORAGE_NOCLASS, JSON.stringify(noClassDays));
+    }
+
+    /***********************
+     * UTILITIES
+     ***********************/
+    function uid(){ return "e_" + Math.random().toString(16).slice(2) + Date.now().toString(16); }
+
+    function toSearchText(e){
+      return [
+        e.date, e.type, e.subject, e.title, e.notes, e.start, e.end
+      ].filter(Boolean).join(" ").toLowerCase();
+    }
+
+    function groupByDate(list){
+      const map = new Map();
+      for(const e of list){
+        if(!map.has(e.date)) map.set(e.date, []);
+        map.get(e.date).push(e);
+      }
+      return map;
+    }
+
+    function sortByTime(a,b){
+      // Put timed events first, then untimed
+      const ta = a.start || "";
+      const tb = b.start || "";
+      if(!!ta !== !!tb) return ta ? -1 : 1;
+      return ta.localeCompare(tb);
+    }
+
+    function getRangeForDays(){
+      const dates = events.map(e=>parseDate(e.date)).filter(Boolean);
+      const minEvent = dates.length ? new Date(Math.min(...dates)) : new Date();
+      const maxEvent = dates.length ? new Date(Math.max(...dates)) : new Date();
+
+      const today = stripTime(new Date());
+
+      // Siempre mostramos desde el primer evento hasta el último,
+      // pero el scroll inicial arrancará en hoy.
+      return { min: stripTime(minEvent), max: stripTime(maxEvent), today };
+    }
+
+    function updateRangePill(){
+      const r = getRangeForDays();
+      pillRange.textContent = `${fmtDate(r.min)} → ${fmtDate(r.max)}`;
+    }
+
+    function enumerateDays(d1, d2){
+      const out = [];
+      const a = stripTime(d1);
+      const b = stripTime(d2);
+      for(let d = new Date(a); d <= b; d.setDate(d.getDate()+1)){
+        out.push(new Date(d));
+      }
+      return out;
+    }
+
+    function stripTime(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+    function parseDate(s){
+      // YYYY-MM-DD
+      const [y,m,dd] = (s||"").split("-").map(x=>parseInt(x,10));
+      if(!y || !m || !dd) return null;
+      return new Date(y, m-1, dd);
+    }
+
+    function fmtDate(d){
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${dd}`;
+    }
+
+    function prettyDate(d){
+      return d.toLocaleDateString("es-ES", { day:"2-digit", month:"short", year:"numeric" });
+    }
+
+    function weekdayLabel(d){
+      return d.toLocaleDateString("es-ES", { weekday:"long" });
+    }
+
+    function typeToTag(type){
+      const map = {
+        clase: { label:"Clase", cls:"type-clase" },
+        practica: { label:"Práctica", cls:"type-practica" },
+        parcial: { label:"Parcial", cls:"type-evaluacion" },
+        examen: { label:"Examen", cls:"type-evaluacion" },
+        entrega: { label:"Entrega", cls:"type-entrega" },
+        presentacion: { label:"Presentación", cls:"type-evaluacion" },
+      };
+      return map[type] || { label:type || "—", cls:"" };
+    }
+
+    function summarizeDots(evs){
+      // max 6 dots
+      const dots = [];
+      for(const e of evs){
+        if(e.type === "examen" || e.type === "parcial" || e.type === "presentacion") dots.push("eval");
+        else if(e.type === "entrega") dots.push("ent");
+        else if(e.type === "clase") dots.push("cls");
+        else dots.push("prc");
+      }
+      return dots.slice(0,6);
+    }
+
+    function startOfCalendarGrid(firstOfMonth){
+      // Monday as first day
+      const d = new Date(firstOfMonth);
+      const day = (d.getDay() + 6) % 7; // 0=Monday
+      d.setDate(d.getDate() - day);
+      return stripTime(d);
+    }
+
+    function endOfCalendarGrid(firstOfMonth){
+      const last = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth()+1, 0);
+      const d = new Date(last);
+      const day = (d.getDay() + 6) % 7;
+      d.setDate(d.getDate() + (6 - day));
+      return stripTime(d);
+    }
+
+    function addMonths(date, delta){
+      return new Date(date.getFullYear(), date.getMonth()+delta, 1);
+    }
+
+    function getMonthState(){
+      if(!window.__monthState){
+        const r = getRangeForDays();
+        window.__monthState = new Date(r.min.getFullYear(), r.min.getMonth(), 1);
+      }
+      return window.__monthState;
+    }
+    function setMonthState(d){
+      window.__monthState = new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+
+    function getAllSubjects(){
+      const set = new Set();
+      events.forEach(e => {
+        if(e.subject){
+          let s = e.subject.trim();
+          if(s.toLowerCase().includes("electrónica básica")) s = "Electrónica";
+          set.add(s);
+        }
+      });
+      Object.keys(progress).forEach(s => {
+        let name = s;
+        if(name.toLowerCase().includes("electrónica básica")) name = "Electrónica";
+        set.add(name);
+      });
+      return [...set].filter(Boolean).sort((a,b)=>a.localeCompare(b));
+    }
+
+    function clamp(n,a,b){ return Math.max(a, Math.min(b, n)); }
+
+    function capitalize(s){ return (s||"").charAt(0).toUpperCase() + (s||"").slice(1); }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function escapeAttr(s){ return escapeHtml(s).replaceAll('"',"&quot;"); }
+
+    /***********************
+     * After render: wire edit/delete for day view lists
+     ***********************/
+    function wireListActions(container){
+      if(!container) return;
+
+      container.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          openModalForEdit(btn.dataset.edit);
+        });
+      });
+
+      container.querySelectorAll("[data-del]").forEach(btn => {
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const id = btn.dataset.del;
+          if(confirm("¿Eliminar este evento?")){
+            events = events.filter(ev => ev.id !== id);
+            saveEvents();
+            hydrateSubjectFilters();
+            updateRangePill();
+            renderAll();
+          }
+        });
+      });
+    }
+
+    // Hook: re-wire after each render on those containers
+    const renderCalendarTab_orig = renderCalendarTab;
+    renderCalendarTab = function(){
+      renderCalendarTab_orig();
+      if(viewMode.value === "day") wireListActions(calendarDayView);
+    }
+
+    const renderEvalsTab_orig = renderEvalsTab;
+    renderEvalsTab = function(){
+      renderEvalsTab_orig();
+      wireListActions(evalsDayView);
+    }
+
+    const renderDeliveriesTab_orig = renderDeliveriesTab;
+    renderDeliveriesTab = function(){
+      renderDeliveriesTab_orig();
+      wireListActions(deliveriesDayView);
+    }
+
+    // Re-render once with patched functions
+    renderAll();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+
+    
+  </script>
+</body>
+</html>
